@@ -1,4 +1,4 @@
-import { getYearComparison, getAllYearsTrend, getAvailableYears, type YearComparisonData } from "@/data/get-members";
+import { getYearComparison, getCachedAllYearsTrend, getCachedAvailableYears, type YearComparisonData } from "@/data/get-members";
 import { ComparativoClient } from "./comparativo-client";
 
 interface Props {
@@ -11,7 +11,7 @@ function isValidYear(ano: string): boolean {
 
 export default async function ComparativoPage({ searchParams }: Props) {
   const { ano1, ano2 } = await searchParams;
-  const availableYears = getAvailableYears();
+  const availableYears = await getCachedAvailableYears();
 
   const years = availableYears.map((y) => parseInt(y.value));
   const defaultYear1 = years.length >= 2 ? years[1] : years[0];
@@ -21,7 +21,7 @@ export default async function ComparativoPage({ searchParams }: Props) {
   const year2 = ano2 && isValidYear(ano2) ? parseInt(ano2) : defaultYear2;
 
   const comparison = getYearComparison(year1, year2);
-  const trend = getAllYearsTrend();
+  const trend = await getCachedAllYearsTrend();
 
   return (
     <ComparativoClient

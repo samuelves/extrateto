@@ -1,4 +1,4 @@
-import { getAnomalias, getAvailableYears } from "@/data/get-members";
+import { getAnomalias, getCachedAvailableYears } from "@/data/get-members";
 import { AnomaliasClient } from "./anomalias-client";
 
 interface Props {
@@ -11,7 +11,7 @@ function isValidYear(ano: string): boolean {
 
 export default async function AnomaliasPage({ searchParams }: Props) {
   const { ano, min } = await searchParams;
-  const availableYears = getAvailableYears();
+  const availableYears = await getCachedAvailableYears();
   const validAno = ano && isValidYear(ano) ? ano : undefined;
   const currentYear =
     validAno ||

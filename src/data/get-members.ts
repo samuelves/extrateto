@@ -3,6 +3,7 @@
  * falling back to mock data for development.
  */
 
+import { unstable_cache } from "next/cache";
 import type { Member } from "./mock-data";
 import { getKPIs } from "./mock-data";
 import { TETO_CONSTITUCIONAL, type Cargo } from "@/lib/constants";
@@ -256,7 +257,7 @@ export interface YearComparisonData {
   averageAboveTeto: number;
   averageTotalRemuneration: number;
   topOrgans: { orgao: string; total: number }[];
-  topState: { estado: string; total: number };
+  topState: { estado: string; total: number } | null;
 }
 
 export interface Anomalia {
@@ -365,8 +366,7 @@ function getYearAggregates(year: number): YearComparisonData | null {
          FROM membros
          WHERE ano_referencia = ? AND acima_teto > 0
          GROUP BY orgao
-         ORDER BY total DESC
-         LIMIT 5`
+         ORDER BY total DESC`
       )
       .all(year) as { orgao: string; total: number }[];
 
@@ -434,20 +434,51 @@ export function getAllYearsTrend(): YearComparisonData[] {
     const db = openDB();
     if (!db) return [];
 
-    const years = db
-      .prepare("SELECT DISTINCT ano_referencia FROM membros ORDER BY ano_referencia")
-      .all() as { ano_referencia: number }[];
-
-    const results: YearComparisonData[] = [];
-
-    for (const { ano_referencia } of years) {
-      const agg = getYearAggregates(ano_referencia);
-      if (agg) results.push(agg);
-    }
+    const rows = db.prepare(`
+      SELECT 
+        ano_referencia as year,
+        COUNT(DISTINCT nome || '-' || orgao) as totalMembers,
+        SUM(CASE WHEN acima_teto > 0 THEN 1 ELSE 0 END) as membersAboveTeto,
+        SUM(acima_teto) as totalAboveTeto,
+        AVG(CASE WHEN acima_teto > 0 THEN acima_teto END) as averageAboveTeto,
+        AVG(remuneracao_total) as averageTotalRemuneration
+      FROM membros
+      GROUP BY ano_referencia
+      ORDER BY ano_referencia
+    `).all() as {
+      year: number;
+      totalMembers: number;
+      membersAboveTeto: number;
+      totalAboveTeto: number;
+      averageAboveTeto: number;
+      averageTotalRemuneration: number;
+    }[];
 
     db.close();
-    return results;
+
+    return rows.map((row) => ({
+      year: row.year,
+      totalMembers: row.totalMembers || 0,
+      membersAboveTeto: row.membersAboveTeto || 0,
+      totalAboveTeto: row.totalAboveTeto || 0,
+      averageAboveTeto: row.averageAboveTeto || 0,
+      averageTotalRemuneration: row.averageTotalRemuneration || 0,
+      topOrgans: [],
+      topState: null,
+    }));
   } catch {
     return [];
   }
 }
+
+export const getCachedAvailableYears = unstable_cache(
+  async () => getAvailableYears(),
+  ["available-years"],
+  { revalidate: 600 }
+);
+
+export const getCachedAllYearsTrend = unstable_cache(
+  async () => getAllYearsTrend(),
+  ["all-years-trend"],
+  { revalidate: 600 }
+);

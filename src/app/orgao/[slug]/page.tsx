@@ -1,4 +1,4 @@
-import { getMembersByYear, getAvailableYears } from "@/data/get-members";
+import { getMembersByYear, getCachedAvailableYears } from "@/data/get-members";
 import { OrgaoDetailClient } from "./orgao-detail-client";
 
 interface Props {
@@ -11,7 +11,7 @@ function isValidYear(ano: string): boolean {
 
 export default async function OrgaoPage({ searchParams }: Props) {
   const { ano } = await searchParams;
-  const availableYears = getAvailableYears();
+  const availableYears = await getCachedAvailableYears();
   const validAno = ano && isValidYear(ano) ? ano : undefined;
   const currentYear =
     validAno ||
