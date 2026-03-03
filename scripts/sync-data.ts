@@ -70,10 +70,17 @@ sqlite.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_membros_estado ON membros(estado);
   CREATE INDEX IF NOT EXISTS idx_membros_orgao ON membros(orgao);
+  CREATE INDEX IF NOT EXISTS idx_membros_cargo ON membros(cargo);
+  CREATE INDEX IF NOT EXISTS idx_membros_nome ON membros(nome);
   CREATE INDEX IF NOT EXISTS idx_membros_remuneracao ON membros(remuneracao_total DESC);
   CREATE INDEX IF NOT EXISTS idx_membros_acima_teto ON membros(acima_teto DESC);
+  CREATE INDEX IF NOT EXISTS idx_membros_percentual ON membros(percentual_acima_teto DESC);
   CREATE INDEX IF NOT EXISTS idx_membros_mes ON membros(mes_referencia);
+  CREATE INDEX IF NOT EXISTS idx_membros_ano ON membros(ano_referencia);
   CREATE INDEX IF NOT EXISTS idx_historico_membro ON historico_mensal(membro_id);
+  CREATE INDEX IF NOT EXISTS idx_historico_mes ON historico_mensal(mes);
+  CREATE INDEX IF NOT EXISTS idx_synclog_status ON sync_log(status);
+  CREATE INDEX IF NOT EXISTS idx_synclog_orgao ON sync_log(orgao);
   CREATE VIRTUAL TABLE IF NOT EXISTS membros_fts USING fts5(
     nome, cargo, orgao,
     content='membros',
